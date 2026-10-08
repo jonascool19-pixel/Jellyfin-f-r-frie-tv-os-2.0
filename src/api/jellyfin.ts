@@ -182,6 +182,9 @@ export class JellyfinApi {
     });
   }
 
+  getServer() { return cleanServer(this.auth.server); }
+  getToken() { return this.auth.token; }
+
   image(id: string, type: 'Primary' | 'Backdrop' | 'Thumb' = 'Primary', width = 480) {
     return `${cleanServer(this.auth.server)}/Items/${encodeURIComponent(id)}/Images/${type}?fillWidth=${width}&quality=90&api_key=${encodeURIComponent(this.auth.token)}`;
   }
