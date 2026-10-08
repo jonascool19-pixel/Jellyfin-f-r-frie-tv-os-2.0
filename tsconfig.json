@@ -1,4 +1,15 @@
 {
-  "extends":"@tsconfig/react-native/tsconfig.json",
-  "compilerOptions":{"strict":true,"noEmit":true}
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-native",
+    "lib": ["es2020", "dom"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "include": ["index.js", "src", "test"]
 }
