@@ -2,7 +2,7 @@ schema-version = 1
 
 [package]
 title = "Jellyfin Vega TV"
-version = "0.1.0"
+version = "0.2.0"
 id = "com.jonascool19.jellyfinvega"
 icon = "@image/icon_512x512.png"
 
@@ -13,30 +13,40 @@ target = "1.2"
 [components]
 [[components.interactive]]
 id = "com.jonascool19.jellyfinvega.main"
+library-name = "com.jonascool19.jellyfinvega"
 runtime-module = "/com.amazon.kepler.keplerscript.runtime.loader_2@IKeplerScript_2_0"
 launch-type = "singleton"
 categories = ["com.amazon.category.main", "com.amazon.category.kepler.media"]
 
+[processes]
+[[processes.group]]
+component-ids = ["com.jonascool19.jellyfinvega.main"]
+
+[wants]
 [[wants.service]]
-id = "com.amazon.webview.renderer_service"
-[[wants.service]]
-id = "com.amazon.inputmethod.service"
+id = "com.amazon.mediametrics.service"
 [[wants.service]]
 id = "com.amazon.media.server"
+[[wants.service]]
+id = "com.amazon.gipc.uuid.*"
+[[wants.service]]
+id = "com.amazon.media.playersession.service"
 [[wants.service]]
 id = "com.amazon.mediabuffer.service"
 [[wants.service]]
 id = "com.amazon.mediatransform.service"
 [[wants.service]]
-id = "com.amazon.network.service"
-[[wants.service]]
 id = "com.amazon.audio.stream"
 [[wants.service]]
 id = "com.amazon.audio.control"
+[[wants.service]]
+id = "com.amazon.audio.system"
+[[wants.service]]
+id = "com.amazon.inputmethod.service"
 
-[[needs.privilege]]
-id = "com.amazon.network.privilege.net-info"
+[[wants.privilege]]
+id = "com.amazon.devconf.privilege.accessibility"
 
-[needs]
-[[needs.module]]
-id = "/com.amazon.vega.os@IVega_1_2"
+[offers]
+[[offers.service]]
+id = "com.amazon.gipc.uuid.*"
