@@ -28,6 +28,9 @@ export type JMediaSource = {
   SupportsTranscoding?: boolean;
   DirectStreamUrl?: string;
   Path?: string;
+  TranscodingUrl?: string;
+  TranscodingSubProtocol?: string;
+  TranscodingContainer?: string;
   MediaStreams?: JMediaStream[];
 };
 
@@ -189,9 +192,9 @@ export class JellyfinApi {
     return `${cleanServer(this.auth.server)}/Items/${encodeURIComponent(id)}/Images/${type}?fillWidth=${width}&quality=90&api_key=${encodeURIComponent(this.auth.token)}`;
   }
 
-  playbackInfo(id: string) {
+  playbackInfo(id: string, startTimeTicks = 0) {
     return this.request<{ MediaSources: JMediaSource[] }>(
-      `/Items/${encodeURIComponent(id)}/PlaybackInfo?UserId=${encodeURIComponent(this.auth.user.Id)}&DeviceId=${encodeURIComponent(this.auth.deviceId)}&MaxStreamingBitrate=120000000`
+      `/Items/${encodeURIComponent(id)}/PlaybackInfo?UserId=${encodeURIComponent(this.auth.user.Id)}&DeviceId=${encodeURIComponent(this.auth.deviceId)}&StartTimeTicks=${startTimeTicks}&IsPlayback=true&AutoOpenLiveStream=true&MaxStreamingBitrate=120000000`
     );
   }
 
