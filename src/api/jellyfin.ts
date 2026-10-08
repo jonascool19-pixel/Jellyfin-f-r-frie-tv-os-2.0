@@ -192,19 +192,19 @@ export class JellyfinApi {
     return `${cleanServer(this.auth.server)}/Items/${encodeURIComponent(id)}/Images/${type}?fillWidth=${width}&quality=90&api_key=${encodeURIComponent(this.auth.token)}`;
   }
 
-  playbackInfo(id: string, startTimeTicks = 0) {
+  playbackInfo(id: string, startTimeTicks = 0, audioStreamIndex?: number, subtitleStreamIndex?: number) {
     return this.request<{ MediaSources: JMediaSource[] }>(
-      `/Items/${encodeURIComponent(id)}/PlaybackInfo?UserId=${encodeURIComponent(this.auth.user.Id)}&DeviceId=${encodeURIComponent(this.auth.deviceId)}&StartTimeTicks=${startTimeTicks}&IsPlayback=true&AutoOpenLiveStream=true&MaxStreamingBitrate=120000000`
+      `/Items/${encodeURIComponent(id)}/PlaybackInfo?UserId=${encodeURIComponent(this.auth.user.Id)}&DeviceId=${encodeURIComponent(this.auth.deviceId)}&StartTimeTicks=${startTimeTicks}&IsPlayback=true&AutoOpenLiveStream=true&MaxStreamingBitrate=120000000${audioStreamIndex === undefined ? '' : '&AudioStreamIndex='+audioStreamIndex}${subtitleStreamIndex === undefined ? '' : '&SubtitleStreamIndex='+subtitleStreamIndex}`
     );
   }
 
-  reportStart(itemId: string, sourceId?: string, positionTicks = 0) {
+  reportStart(itemId: string, sourceId?: string, positionTicks = 0, playMethod: 'DirectPlay' | 'DirectStream' | 'Transcode' = 'DirectPlay') {
     return this.request<void>('/Sessions/Playing', {
       method: 'POST',
       body: JSON.stringify({
         ItemId: itemId,
         MediaSourceId: sourceId,
-        PlayMethod: 'DirectPlay',
+        PlayMethod: playMethod,
         PositionTicks: positionTicks,
         CanSeek: true,
         IsPaused: false,
