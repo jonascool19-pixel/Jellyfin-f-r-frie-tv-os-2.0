@@ -2,7 +2,6 @@ import React,{useCallback,useEffect,useMemo,useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BackHandler,Image,Pressable,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {JellyfinApi,JItem,JellyfinAuth} from './api/jellyfin';
-import {ticksToSeconds} from './api/playback';
 import {VegaPlayer} from './components/VegaPlayer';
 const C={bg:'#0b0b0b',panel:'#171717',panel2:'#242424',text:'#fff',muted:'#aaa',accent:'#00a4dc'};const AUTH='@jellyfin-vega/auth';
 function Btn({label,onPress,primary=false,auto=false}:{label:string;onPress:()=>void;primary?:boolean;auto?:boolean}){return <Pressable hasTVPreferredFocus={auto} onPress={onPress} style={({focused})=>[x.btn,primary&&x.primary,focused&&x.focus]}><Text style={x.btnText}>{label}</Text></Pressable>}
@@ -19,7 +18,7 @@ export default function App(){
  useEffect(()=>{const b=BackHandler.addEventListener('hardwareBackPress',()=>{if(playerItem){setPlayerItem(null);return true}if(selected){setSelected(null);return true}if(library){setLibrary(null);return true}if(page!=='home'){setPage('home');return true}return false});return()=>b.remove()},[playerItem,selected,library,page]);
  const login=async()=>{if(!server||!user){setError('Server und Benutzername eingeben.');return}setLoading(true);setError('');try{const a=await new JellyfinApi({server,token:'',user:{Id:''},deviceId:''}).authenticate(server,user,pass);const n:JellyfinAuth={server:server.trim().replace(/\/+$/,''),token:a.AccessToken,user:{Id:a.User.Id,Name:a.User.Name},deviceId:a.deviceId};await AsyncStorage.setItem(AUTH,JSON.stringify(n));setAuth(n)}catch(e:any){setError(e?.message||'Anmeldung fehlgeschlagen.')}finally{setLoading(false)}};
  const logout=async()=>{try{await api?.logout()}catch{}await AsyncStorage.removeItem(AUTH);setAuth(null);setPlayerItem(null)};
- const openItem=async(i:JItem)=>{try{setLoading(true);const f=await api!.item(i.Id);setSelected(f)}catch(e:any){setError(e?.message||'Titel konnte nicht geöffnet werden.')}finally{setLoading(false)}};
+ const openItem=async(i:JItem)=>{try{setLoading(true);const f=await api!.item(i.Id);if(f.Type==='Series'||f.Type==='Season'){setLibrary(f);const r=await api!.libraryItems(f.Id);setLibraryItems(r.Items||[]);setSelected(null)}else setSelected(f)}catch(e:any){setError(e?.message||'Titel konnte nicht geöffnet werden.')}finally{setLoading(false)}};
  const openLibrary=async(i:JItem)=>{try{setLoading(true);setLibrary(i);const r=await api!.libraryItems(i.Id);setLibraryItems(r.Items||[])}catch(e:any){setError(e?.message||'Bibliothek konnte nicht geladen werden.')}finally{setLoading(false)}};
  const doSearch=async(q:string)=>{setQuery(q);if(q.trim().length<2){setResults([]);return}try{const r=await api!.search(q);setResults(r.Items||[])}catch(e:any){setError(e?.message||'Suche fehlgeschlagen.')}};
  if(!hydrated)return <SafeAreaView style={x.screen}><View style={x.center}><Text style={x.centerText}>Jellyfin wird gestartet …</Text></View></SafeAreaView>;
