@@ -14,8 +14,8 @@ export function chooseSource(sources: JMediaSource[] = []) {
 export function playbackUrl(api: JellyfinApi, item: JItem, source?: JMediaSource) {
   const selected = source || chooseSource(item.MediaSources);
   if (!selected) return null;
-  if (selected.DirectStreamUrl) return {url: selected.DirectStreamUrl, source: selected};
-  if (selected.TranscodingUrl) return {url: selected.TranscodingUrl, source: selected};
+  if (selected.DirectStreamUrl) return {url: selected.DirectStreamUrl.startsWith('/') ? api.getServer()+selected.DirectStreamUrl : selected.DirectStreamUrl, source: selected};
+  if (selected.TranscodingUrl) return {url: selected.TranscodingUrl.startsWith('/') ? api.getServer()+selected.TranscodingUrl : selected.TranscodingUrl, source: selected};
   const url = `${api.getServer()}/Videos/${encodeURIComponent(item.Id)}/stream?Static=true&MediaSourceId=${encodeURIComponent(selected.Id)}&api_key=${encodeURIComponent(api.getToken())}`;
   return {url, source: selected};
 }
