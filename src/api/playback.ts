@@ -14,13 +14,7 @@ export function chooseSource(sources: JMediaSource[] = []) {
 export function playbackUrl(api: JellyfinApi, item: JItem, source?: JMediaSource) {
   const selected = source || chooseSource(item.MediaSources);
   if (!selected) return null;
-
-  if (selected.DirectStreamUrl) {
-    return api['auth'] ? selected.DirectStreamUrl : null;
-  }
-
-  return {
-    url: `${(api as any).auth.server.replace(/\\/$/, '')}/Videos/${encodeURIComponent(item.Id)}/stream?Static=true&MediaSourceId=${encodeURIComponent(selected.Id)}&api_key=${encodeURIComponent((api as any).auth.token)}`,
-    source: selected,
-  };
+  if (selected.DirectStreamUrl) return {url: selected.DirectStreamUrl, source: selected};
+  const url = `${api.getServer()}/Videos/${encodeURIComponent(item.Id)}/stream?Static=true&MediaSourceId=${encodeURIComponent(selected.Id)}&api_key=${encodeURIComponent(api.getToken())}`;
+  return {url, source: selected};
 }
