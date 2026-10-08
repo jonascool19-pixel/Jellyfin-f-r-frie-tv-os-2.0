@@ -5,23 +5,23 @@ import {JellyfinApi,JItem,JMediaSource} from '../api/jellyfin';
 import {playbackUrl,secondsToTicks,ticksToSeconds} from '../api/playback';
 
 export function VegaPlayer({api,item,onClose,onEnded}:{api:JellyfinApi;item:JItem;onClose:()=>void;onEnded?:()=>void}){
- const player=useRef<VideoPlayer|null>(null); const source=useRef<JMediaSource|null>(null);
+ const player=useRef<VideoPlayer|null>(null); const source=useRef<JMediaSource|null>(null); const positionRef=useRef(ticksToSeconds(item.UserData?.PlaybackPositionTicks)); const pausedRef=useRef(false);
  const [ready,setReady]=useState(false); const [paused,setPaused]=useState(false); const [position,setPosition]=useState(ticksToSeconds(item.UserData?.PlaybackPositionTicks));
  const [duration,setDuration]=useState(ticksToSeconds(item.RunTimeTicks)); const [error,setError]=useState(''); const [controls,setControls]=useState(true); const [audioIndex,setAudioIndex]=useState<number|undefined>(); const [subtitleIndex,setSubtitleIndex]=useState<number|undefined>();
  const streamUrl=(s:JMediaSource)=>{const p=playbackUrl(api,item,s);return p?p.url:''};
- const report=async(final=false)=>{try{const t=secondsToTicks(position);if(final)await api.reportStop(item.Id,source.current?.Id,t);else await api.reportProgress(item.Id,source.current?.Id,t,paused);}catch{}};
- const load=async(start:number)=>{
-  try{setError('');const info=await api.playbackInfo(item.Id,secondsToTicks(start),audioIndex,subtitleIndex);const s=info.MediaSources?.find(x=>x.SupportsDirectPlay)||info.MediaSources?.find(x=>x.SupportsDirectStream)||info.MediaSources?.find(x=>x.SupportsTranscoding)||info.MediaSources?.[0];
+ const report=async(final=false)=>{try{const t=secondsToTicks(positionRef.current);if(final)await api.reportStop(item.Id,source.current?.Id,t);else await api.reportProgress(item.Id,source.current?.Id,t,pausedRef.current);}catch{}};
+ const load=async(start:number,aIndex?:number,sIndex?:number)=>{
+  try{setError('');const info=await api.playbackInfo(item.Id,secondsToTicks(start),aIndex,sIndex);const s=info.MediaSources?.find(x=>x.SupportsDirectPlay)||info.MediaSources?.find(x=>x.SupportsDirectStream)||info.MediaSources?.find(x=>x.SupportsTranscoding)||info.MediaSources?.[0];
    if(!s)throw new Error('Keine abspielbare Quelle gefunden.');source.current=s;const url=streamUrl(s);if(!url)throw new Error('Keine Wiedergabe-URL verfügbar.');
    const p=new VideoPlayer();player.current=p;await p.initialize();p.autoplay=false;
    const onMeta=()=>{const d=Number(p.duration||0);if(d>0)setDuration(d);try{p.currentTime=Math.max(0,start)}catch{}p.play().catch(()=>{});setReady(true)};
-   const onTime=()=>{setPosition(Number(p.currentTime||0));const d=Number(p.duration||0);if(d>0)setDuration(d)};
-   const onPlay=()=>setPaused(false);const onPause=()=>setPaused(true);const onEnd=async()=>{await report(true);onEnded&&onEnded()};const onErr=()=>setError('Die Wiedergabe konnte nicht gestartet werden.');
+   const onTime=()=>{positionRef.current=Number(p.currentTime||0);setPosition(positionRef.current);const d=Number(p.duration||0);if(d>0)setDuration(d)};
+   const onPlay=()=>{pausedRef.current=false;setPaused(false)};const onPause=()=>{pausedRef.current=true;setPaused(true)};const onEnd=async()=>{await report(true);onEnded&&onEnded()};const onErr=()=>setError('Die Wiedergabe konnte nicht gestartet werden.');
    p.addEventListener('loadedmetadata',onMeta);p.addEventListener('timeupdate',onTime);p.addEventListener('play',onPlay);p.addEventListener('pause',onPause);p.addEventListener('ended',onEnd);p.addEventListener('error',onErr);p.src=url;const method=s.SupportsDirectPlay?'DirectPlay':s.SupportsDirectStream?'DirectStream':'Transcode';await api.reportStart(item.Id,s.Id,secondsToTicks(start),method);
   }catch(e:any){setError(e?.message||'Wiedergabefehler.')} 
  };
  useEffect(()=>{load(position);const timer=setInterval(()=>{if(player.current)report(false)},5000);const back=BackHandler.addEventListener('hardwareBackPress',()=>{report(true);player.current?.pause();onClose();return true});return()=>{clearInterval(timer);back.remove();report(true);player.current?.pause();player.current?.deinitialize?.();player.current=null}},[]);
- const switchTrack=async(type:'audio'|'subtitle')=>{const streams=(source.current?.MediaStreams||item.MediaStreams||[]).filter(v=>v.Type===(type==='audio'?'Audio':'Subtitle'));if(!streams.length)return;const current=type==='audio'?audioIndex:subtitleIndex;const next=streams.find(v=>v.Index!==current)?.Index??streams[0].Index;if(type==='audio')setAudioIndex(next);else setSubtitleIndex(next);const pos=Number(player.current?.currentTime||position);await player.current?.deinitialize?.();player.current=null;setReady(false);setTimeout(()=>load(pos),0)};
+ const switchTrack=async(type:'audio'|'subtitle')=>{const streams=(source.current?.MediaStreams||item.MediaStreams||[]).filter(v=>v.Type===(type==='audio'?'Audio':'Subtitle'));if(!streams.length)return;const current=type==='audio'?audioIndex:subtitleIndex;const next=streams.find(v=>v.Index!==current)?.Index??streams[0].Index;const nextAudio=type==='audio'?next:audioIndex;const nextSubtitle=type==='subtitle'?next:subtitleIndex;if(type==='audio')setAudioIndex(next);else setSubtitleIndex(next);const pos=Number(player.current?.currentTime||positionRef.current);await player.current?.deinitialize?.();player.current=null;setReady(false);setTimeout(()=>load(pos,nextAudio,nextSubtitle),0)};
  const seek=(delta:number)=>{if(!player.current)return;const n=Math.max(0,Math.min(duration||Number.MAX_SAFE_INTEGER,Number(player.current.currentTime||0)+delta));player.current.currentTime=n;setPosition(n)};
  const toggle=()=>{if(!player.current)return;if(paused)player.current.play().catch(()=>{});else player.current.pause()};
  const progress=duration>0?Math.min(1,position/duration):0;
